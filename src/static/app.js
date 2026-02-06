@@ -20,10 +20,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
         
-        // Create participants list HTML
+        // Create participants list HTML with remove buttons
         const participantsList = details.participants.length > 0 
-          ? details.participants.map(participant => `<li>${participant}</li>`).join('')
-          : '<li className="no-participants">No participants yet</li>';
+          ? details.participants.map(participant => `<li><span class="participant-email">${participant}</span><button class="remove-btn" data-activity="${name}" data-email="${participant}" title="Remove participant">✕</button></li>`).join('')
+          : '<li class="no-participants">No participants yet</li>';
 
         activityCard.innerHTML = `
           <h4>${name}</h4>
@@ -45,6 +45,35 @@ document.addEventListener("DOMContentLoaded", () => {
         option.value = name;
         option.textContent = name;
         activitySelect.appendChild(option);
+
+              // Add event listeners to remove buttons
+              const removeButtons = activityCard.querySelectorAll(".remove-btn");
+              removeButtons.forEach(btn => {
+                btn.addEventListener("click", async (e) => {
+                  e.preventDefault();
+                  const activity = btn.getAttribute("data-activity");
+                  const email = btn.getAttribute("data-email");
+            
+                  try {
+                    const response = await fetch(
+                      `/activities/${encodeURIComponent(activity)}/remove?email=${encodeURIComponent(email)}`,
+                      {
+                        method: "POST",
+                      }
+                    );
+
+                    if (response.ok) {
+                      // Refresh to update the activity list and availability
+                      fetchActivities();
+                    } else {
+                      const result = await response.json();
+                      console.error("Error removing participant:", result.detail);
+                    }
+                  } catch (error) {
+                    console.error("Error removing participant:", error);
+                  }
+                });
+              });
       });
     } catch (error) {
       activitiesList.innerHTML = "<p>Failed to load activities. Please try again later.</p>";
